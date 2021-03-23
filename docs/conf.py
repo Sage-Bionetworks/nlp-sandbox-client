@@ -25,7 +25,7 @@ copyright = '2020, Sage Bionetworks'
 author = 'Thomas Yu'
 
 # The short X.Y version
-version = '0.4.1'
+version = '1.0'
 # The full version, including alpha/beta/rc tags
 release = version
 

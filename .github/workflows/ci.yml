@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   schedule:
@@ -24,6 +24,10 @@ jobs:
       with:
         entrypoint: hadolint
         args: Dockerfile
+    - name: Lint Python requirements files
+      run: |
+        sort -f --check requirements.txt
+        sort -f --check test-requirements.txt
     - name: Lint with Flake8
       uses: docker://alpine/flake8:latest
       with:
@@ -34,17 +38,38 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8]
+        python-version: [3.7, 3.8, 3.9]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: python -m pip install --upgrade pip tox
+      run: python -m pip install --upgrade pip tox tox-gh-actions coveralls
     - name: Run tests
       run: tox
+    - name: Prepare environment for coveralls
+      run: |
+        echo "PYTHON_ENV=$(echo py${{ matrix.python-version }} | tr -d .)" >> $GITHUB_ENV
+    - name: Coveralls Parallel
+      env:
+        COVERALLS_FLAG_NAME: ${{ env.PYTHON_ENV }}
+        COVERALLS_PARALLEL: true
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: coveralls --service=github
+
+  finish-coveralls:
+    needs: [test]
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+    - name: Finish Coveralls Parallel
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        pip3 install --upgrade coveralls
+        coveralls --finish
 
   pypi:
     needs: [test]

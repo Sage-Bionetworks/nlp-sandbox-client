@@ -46,7 +46,7 @@ with datanode.ApiClient() as api_client:
     note_id = NoteId("awesome-note") # NoteId | The ID of the note that is being created
     note_create_request = NoteCreateRequest(
         text="On 12/26/2020, Ms. Chloe Price met with Dr. Prescott in Seattle.",
-        note_type="loinc:LP29684-5",
+        type="loinc:LP29684-5",
         patient_id=PatientId("awesome-patient"),
     ) # NoteCreateRequest |  (optional)
 

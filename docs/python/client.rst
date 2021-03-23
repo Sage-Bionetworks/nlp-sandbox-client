@@ -11,3 +11,8 @@ nlpsandboxclient
     :members:
     :undoc-members:
     :show-inheritance:
+
+.. automodule:: nlpsandboxclient.evaluation
+    :members:
+    :undoc-members:
+    :show-inheritance:

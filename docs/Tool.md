@@ -12,8 +12,8 @@ Name | Type | Description | Notes
 **author** | **str** | The author of the tool | 
 **author_email** | **str** | The email address of the author | 
 **url** | **str** | The URL to the homepage of the tool | 
-**tool_type** | [**ToolType**](ToolType.md) |  | 
-**tool_api_version** | **str** | The version of the tool OpenAPI specification | 
+**type** | [**ToolType**](ToolType.md) |  | 
+**api_version** | **str** | The version of the tool OpenAPI specification | 
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

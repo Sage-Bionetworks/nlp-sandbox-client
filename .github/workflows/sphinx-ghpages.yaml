@@ -1,8 +1,8 @@
 name: "Pull Request Docs Check"
 on: 
   push:
-    branches:
-      - develop
+    tags:
+      - '*.*.*'
 jobs:
   docs:
     runs-on: ubuntu-latest

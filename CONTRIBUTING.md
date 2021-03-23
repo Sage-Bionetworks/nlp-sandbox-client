@@ -166,4 +166,4 @@ channel that best matches the topic of your request.
 [reaction]: https://github.blog/2016-03-10-add-reactions-to-pull-requests-issues-and-comments/
 [docs site]: https://github.com/nlpsandbox/nlpsandbox-website-synapse
 [Forking Workflow]: https://www.atlassian.com/git/tutorials/comparing-workflows/forking-workflow
-[NLP Sandbox Discord server]: https://discord.gg/Zb4ymtF
+[NLP Sandbox Discord server]: https://nlpsandbox.io/discord

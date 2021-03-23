@@ -13,20 +13,19 @@ import re
 # take as input the location of
 class Evaluation(metaclass=ABCMeta):
     """Evaluate the different types"""
-    gs_dict_seq = dict()
-    sys_dict_seq = dict()
-    gs_dict_token = dict()
-    sys_dict_token = dict()
-    loc_list = list()
-    type_list = list()
     evaluation_type = None
     annotation = None
     col = None
-    # noAddressType to check if participants' submission include "addressType", default is True, no addressType
-    noAddressType = True
 
     def __init__(self):
-        pass
+        self.gs_dict_seq = dict()
+        self.sys_dict_seq = dict()
+        self.gs_dict_token = dict()
+        self.sys_dict_token = dict()
+        self.loc_list = list()
+        self.type_list = list()
+        # noAddressType to check if participants' submission include "addressType", default is True, no addressType
+        self.noAddressType = True
 
     def convert_annotations(self, annotations):
         if self.evaluation_type == "date":

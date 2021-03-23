@@ -11,6 +11,7 @@
                 "start": 20,
                 "length": 10,
                 "text": "11/21/2019",
+                "confidence": 95.5,
                 "dateFormat": "MM/DD/YYYY"
             }
         ],
@@ -19,6 +20,7 @@
                 "start": 20,
                 "length": 8,
                 "text": "Dr.Smith",
+                "confidence": 95.5,
                 "personType": "doctor"
             }
         ],
@@ -27,6 +29,7 @@
                 "start": 40,
                 "length": 7,
                 "text": "Seattle",
+                "confidence": 95.5,
                 "addressType": "city"
             }
         ]
@@ -42,6 +45,7 @@
                 "start": 45,
                 "length": 10,
                 "text": "12/25/2020",
+                "confidence": 95.5,
                 "dateFormat": "MM/DD/YYYY"
             }
         ],
@@ -50,6 +54,7 @@
                 "start": 45,
                 "length": 9,
                 "text": "Jon Smith",
+                "confidence": 95.5,
                 "personType": "patient"
             }
         ],
@@ -58,6 +63,7 @@
                 "start": 98,
                 "length": 2,
                 "text": "WA",
+                "confidence": 95.5,
                 "addressType": "state"
             }
         ]
@@ -73,6 +79,7 @@
                 "start": 45,
                 "length": 8,
                 "text": "12/25/20",
+                "confidence": 95.5,
                 "dateFormat": "MM/DD/YYYY"
             }
         ],
@@ -81,6 +88,7 @@
                 "start": 25,
                 "length": 3,
                 "text": "Jon",
+                "confidence": 95.5,
                 "personType": "patient"
             }
         ],
@@ -97,6 +105,7 @@
                 "start": 42,
                 "length": 14,
                 "text": "This Wednesday",
+                "confidence": 95.5,
                 "dateFormat": "D"
             }
         ],
@@ -105,6 +114,7 @@
                 "start": 22,
                 "length": 8,
                 "text": "Smith Ke",
+                "confidence": 95.5,
                 "personType": "patient"
             }
         ],
@@ -113,6 +123,7 @@
                 "start": 22,
                 "length": 2,
                 "text": "UW",
+                "confidence": 95.5,
                 "addressType": "organization"
             }
         ]
@@ -130,6 +141,7 @@
                 "start": 25,
                 "length": 5,
                 "text": "David",
+                "confidence": 95.5,
                 "addressType": "organization"
             }
         ]

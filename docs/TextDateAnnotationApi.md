@@ -39,7 +39,7 @@ with annotator.ApiClient() as api_client:
         note=Note(
             identifier=NoteId("awesome-note"),
             text="text_example",
-            note_type="note_type_example",
+            type="type_example",
             patient_id=PatientId("awesome-patient"),
         ),
     ) # TextDateAnnotationRequest |  (optional)
