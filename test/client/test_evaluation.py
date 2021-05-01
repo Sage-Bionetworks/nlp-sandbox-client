@@ -2,7 +2,7 @@
 import math
 import os
 
-from nlpsandboxclient import evaluation, utils
+from nlpsandboxclient import evaluation
 
 class TestEvaluation:
     """Test evaluation"""

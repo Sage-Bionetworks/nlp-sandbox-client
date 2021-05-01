@@ -4,16 +4,26 @@ from unittest.mock import Mock, patch
 import pytest
 
 import annotator
-from annotator.api import text_date_annotation_api
+from annotator.api import (
+    text_date_annotation_api,
+    text_person_name_annotation_api,
+    text_physical_address_annotation_api,
+    tool_api,
+)
+from annotator.models import (
+    License, TextDateAnnotation, TextDateAnnotationResponse, Tool, ToolType
+)
 import datanode
-from datanode.api import note_api, annotation_api, annotation_store_api
+from datanode.api import (
+    annotation_api, annotation_store_api,
+    dataset_api, note_api,
+)
 from datanode.models import (
     Annotation, AnnotationName, AnnotationSource,
-    AnnotationStore, AnnotationStoreName,
-    PageLimit, PageOfAnnotations,
+    AnnotationStore, AnnotationStoreName, Dataset, DatasetName,
+    PageLimit, PageOfAnnotations, PageOfDatasets,
     PageOfNotes, PageOffset, PatientId, Note, NoteId,
-    ResourceSource,
-    ResponsePageMetadataLinks,
+    ResourceSource, ResponsePageMetadataLinks,
 )
 from datanode.rest import ApiException
 from nlpsandboxclient import client
@@ -77,6 +87,7 @@ class TestDataNodeClient:
         self.api_client = patch.object(datanode, "ApiClient")
         self.dataset_id = "awesome-dataset"
         self.annotation_store_id = "annotation-store"
+        self.annotation_id = "awesome-annotation"
         self.fhir_store_id = "fhir-store"
         # To mock context manager
 
@@ -202,7 +213,7 @@ class TestDataNodeClient:
             assert store == store_example
 
     def test_list_annotations(self):
-        """Test creating of annotation store if create_if_missing is True"""
+        """Test listing of annotations"""
         annotation_example = PageOfAnnotations(
             annotations=[
                 Annotation(
@@ -243,6 +254,102 @@ class TestDataNodeClient:
                 offset=0, limit=10
             )
 
+    def test_list_datasets(self):
+        """Test listing of datasets"""
+        example_datasets = PageOfDatasets(
+            datasets=[
+                Dataset(name=DatasetName("foo"))
+            ],
+            offset=PageOffset(10),
+            limit=PageLimit(10),
+            links=ResponsePageMetadataLinks(next=""),
+            total_results=30
+        )
+
+        with self.config as config,\
+             self.api_client as api_client,\
+             patch.object(dataset_api, "DatasetApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "list_datasets",
+                          return_value=example_datasets) as list_datasets:
+
+            api_client.return_value = api_client
+            api_client.__enter__ = Mock(return_value=self.api)
+            api_client.__exit__ = Mock(return_value=None)
+
+            datasets = client.list_datasets(host=self.host)
+            assert list(datasets) == [
+                {'name': 'foo'}
+            ]
+            config.assert_called_once_with(host=self.host)
+            api_client.assert_called_once_with(self.configuration)
+            resource_api.assert_called_once_with(self.api)
+            list_datasets.assert_called_once_with(limit=10, offset=0)
+
+    def test_get_annotation(self):
+        """Test getting of annotation"""
+        example_annotation = Annotation(
+            name=AnnotationName("12344"),
+            annotation_source=AnnotationSource(resource_source=ResourceSource(name="foo")),
+        )
+        with self.config as config,\
+             self.api_client as api_client,\
+             patch.object(annotation_api, "AnnotationApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "get_annotation",
+                          return_value=example_annotation) as get_annotation:
+
+            api_client.return_value = api_client
+            api_client.__enter__ = Mock(return_value=self.api)
+            api_client.__exit__ = Mock(return_value=None)
+
+            annotation = client.get_annotation(
+                host=self.host, dataset_id=self.dataset_id,
+                annotation_store_id=self.annotation_store_id,
+                annotation_id=self.annotation_id
+            )
+            assert annotation == example_annotation
+            config.assert_called_once_with(host=self.host)
+            api_client.assert_called_once_with(self.configuration)
+            resource_api.assert_called_once_with(self.api)
+            get_annotation.assert_called_once_with(
+                self.dataset_id, self.annotation_store_id,
+                self.annotation_id
+            )
+
+    def test__store_annotations(self):
+        return_obj = Mock()
+        example_annotation = Annotation(
+            name=AnnotationName("12344"),
+            annotation_source=AnnotationSource(resource_source=ResourceSource(name="foo")),
+        )
+        with self.config as config,\
+             self.api_client as api_client,\
+             patch.object(annotation_api, "AnnotationApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "create_annotation",
+                          return_value=return_obj) as patch_store:
+
+            api_client.return_value = api_client
+            api_client.__enter__ = Mock(return_value=self.api)
+            api_client.__exit__ = Mock(return_value=None)
+
+            annotation = client._store_annotation(
+                host=self.host, dataset_id=self.dataset_id,
+                annotation_store_id=self.annotation_store_id,
+                annotation_id=self.annotation_id,
+                annotation=example_annotation
+            )
+            config.assert_called_once_with(host=self.host)
+            api_client.assert_called_once_with(self.configuration)
+            resource_api.assert_called_once_with(self.api)
+            patch_store.assert_called_once_with(
+                annotation_create_request=example_annotation,
+                annotation_id='awesome-annotation',
+                annotation_store_id='annotation-store',
+                async_req=True, dataset_id='awesome-dataset'
+            )
+
 
 class TestAnnotatorClient:
 
@@ -254,6 +361,12 @@ class TestAnnotatorClient:
         self.config = patch.object(annotator, "Configuration",
                                    return_value=self.configuration)
         self.api_client = patch.object(annotator, "ApiClient")
+        self.example_note = {
+            "identifier": "note-1",
+            "type": "loinc:LP29684-5",
+            "patientId": "507f1f77bcf86cd799439011",
+            "text": "On 12/26/2020, Ms. Chloe Price met with Dr. Prescott."
+        }
         self.example_request = {
             "note": {
                 "identifier": "note-1",
@@ -262,6 +375,11 @@ class TestAnnotatorClient:
                 "text": "On 12/26/2020, Ms. Chloe Price met with Dr. Prescott."
             }
         }
+        self.date_response = TextDateAnnotationResponse(
+            text_date_annotations=[
+                TextDateAnnotation(start=10, length=10, text="foobar", confidence=95.5)
+            ]
+        )
 
     def test__annotate_date(self):
         """Test annotating date"""
@@ -276,20 +394,105 @@ class TestAnnotatorClient:
                 text_date_annotation_request=self.example_request
             )
 
-    # def test__annotate_person(self):
-    #     """Test annotating person"""
-    #     with patch.object(text_date_annotation_api, "TextDateAnnotationApi",
-    #                       return_value=self.mock_api) as resource_api,\
-    #          patch.object(self.mock_api, "create_text_date_annotations",
-    #                       return_value="foo") as list_annotations:
-    #         annotated = client._annotate_date(self.api, self.example_request)
-    #         assert annotated == "foo"
+    def test__annotate_person(self):
+        """Test annotating person"""
+        with patch.object(text_person_name_annotation_api, "TextPersonNameAnnotationApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "create_text_person_name_annotations",
+                          return_value="foo") as create_annotations:
+            annotated = client._annotate_person(self.api, self.example_request)
+            assert annotated == "foo"
+            resource_api.assert_called_once_with(self.api)
+            create_annotations.assert_called_once_with(
+                text_person_name_annotation_request=self.example_request
+            )
 
-    # def test__annotate_physical_address(self):
-    #     """Test annotating physical address"""
-    #     with patch.object(text_date_annotation_api, "TextDateAnnotationApi",
-    #                       return_value=self.mock_api) as resource_api,\
-    #          patch.object(self.mock_api, "create_text_date_annotations",
-    #                       return_value="foo") as list_annotations:
-    #         annotated = client._annotate_date(self.api, self.example_request)
-    #         assert annotated == "foo"
+    def test__annotate_physical_address(self):
+        """Test annotating physical address"""
+        with patch.object(text_physical_address_annotation_api, "TextPhysicalAddressAnnotationApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "create_text_physical_address_annotations",
+                          return_value="foo") as create_annotations:
+            annotated = client._annotate_address(self.api, self.example_request)
+            assert annotated == "foo"
+            resource_api.assert_called_once_with(self.api)
+            create_annotations.assert_called_once_with(
+                text_physical_address_annotation_request=self.example_request
+            )
+
+    def test_annotate_note__wrong_tool_type(self):
+        """Wrong tool type"""
+        with pytest.raises(ValueError, match="Invalid annotator_type: foo"):
+            client.annotate_note(host=self.host, note=self.example_note,
+                                 tool_type="foo")
+
+    @pytest.mark.parametrize("tool_type,tool_func", [
+        ("nlpsandbox:date-annotator", "_annotate_date"),
+        ("nlpsandbox:person-name-annotator", "_annotate_person"),
+        ("nlpsandbox:physical-address-annotator", "_annotate_address"),
+    ])
+    def test_annotate_note(self, tool_type, tool_func):
+        """Test annotate note"""
+        with self.config as config,\
+             self.api_client as api_client,\
+             patch.object(client, tool_func,
+                          return_value=self.date_response) as patch_annot:
+            api_client.return_value = api_client
+            api_client.__enter__ = Mock(return_value=self.api)
+            api_client.__exit__ = Mock(return_value=None)
+
+            result = client.annotate_note(
+                host=self.host, note=self.example_note, tool_type=tool_type
+            )
+            config.assert_called_once_with(host=self.host)
+            api_client.assert_called_once_with(self.configuration)
+            patch_annot.assert_called_once_with(self.api, self.example_request)
+            assert result == {
+                'textDateAnnotations': [
+                    {'start': 10, 'length': 10, 'text': 'foobar', 'confidence': 95.5}
+                ]
+            }
+
+    def test_get_tool(self):
+        """Get tool"""
+        tool_example = Tool(
+            name="foo", version="1.0.0", license=License("apache-2.0"),
+            repository="www.google.com", description="foobar",
+            author="Bob", author_email="email@email.com", url="www.google.com",
+            type=ToolType("tool"), api_version="1.0.0"
+        )
+        with self.config as config,\
+             self.api_client as api_client,\
+             patch.object(tool_api, "ToolApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "get_tool",
+                          return_value=tool_example) as get_tool,\
+             patch.object(client, "_get_tool_redirect",
+                          return_value=tool_example.to_dict()):
+            api_client.return_value = api_client
+            api_client.__enter__ = Mock(return_value=self.api)
+            api_client.__exit__ = Mock(return_value=None)
+            tool = client.get_tool(host=self.host)
+            assert tool == tool_example
+
+    def test_get_tool__invalid(self):
+        """Tool and redirect don't match"""
+        tool_example = Tool(
+            name="foo", version="1.0.0", license=License("apache-2.0"),
+            repository="www.google.com", description="foobar",
+            author="Bob", author_email="email@email.com", url="www.google.com",
+            type=ToolType("tool"), api_version="1.0.0"
+        )
+        with self.config as config,\
+             self.api_client as api_client,\
+             patch.object(tool_api, "ToolApi",
+                          return_value=self.mock_api) as resource_api,\
+             patch.object(self.mock_api, "get_tool",
+                          return_value=tool_example) as get_tool,\
+             patch.object(client, "_get_tool_redirect",
+                          return_value={}),\
+             pytest.raises(ValueError, match="Tool base URL must redirect*"):
+            api_client.return_value = api_client
+            api_client.__enter__ = Mock(return_value=self.api)
+            api_client.__exit__ = Mock(return_value=None)
+            tool = client.get_tool(host=self.host)
